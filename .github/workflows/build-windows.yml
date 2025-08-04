@@ -46,6 +46,11 @@ jobs:
         cd q-cli-source/target/release
         mv chat_cli.exe q.exe
     
+    - name: Create zip archive
+      run: |
+        cd q-cli-source/target/release
+        Compress-Archive -Path q.exe -DestinationPath amazon-q-developer-cli-${{ inputs.version }}.zip
+    
     - name: Create Release
       uses: actions/create-release@v1
       id: create_release
@@ -63,6 +68,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: q-cli-source/target/release/q.exe
-        asset_name: q.exe
-        asset_content_type: application/octet-stream
+        asset_path: q-cli-source/target/release/amazon-q-developer-cli-${{ inputs.version }}.zip
+        asset_name: amazon-q-developer-cli-${{ inputs.version }}.zip
+        asset_content_type: application/zip
