@@ -1,0 +1,68 @@
+name: Build Amazon Q Developer CLI for Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version/branch/tag to build'
+        required: true
+        default: 'main'
+        type: string
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Clone Amazon Q Developer CLI repository
+      run: |
+        git clone --branch ${{ inputs.version }} https://github.com/aws/amazon-q-developer-cli.git q-cli-source
+    
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+    
+    - name: Build binary
+      run: |
+        cd q-cli-source
+        cargo build --bin chat_cli --release
+    
+    - name: Rename binary
+      run: |
+        cd q-cli-source/target/release
+        mv chat_cli.exe q.exe
+    
+    - name: Create Release
+      uses: actions/create-release@v1
+      id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ inputs.version }}
+        release_name: Amazon Q CLI ${{ inputs.version }}
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: q-cli-source/target/release/q.exe
+        asset_name: q.exe
+        asset_content_type: application/octet-stream
