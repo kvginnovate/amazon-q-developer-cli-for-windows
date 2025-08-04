@@ -8,7 +8,7 @@ Build Amazon Q Developer CLI for Windows.
 
 ## Download
 
-Download the latest `q.exe` binary from the [Releases](https://github.com/DiscreteTom/amazon-q-developer-cli-for-windows/releases) page.
+Download the latest zip file from the [Releases](https://github.com/DiscreteTom/amazon-q-developer-cli-for-windows/releases) page. Extract the `q.exe` binary from the downloaded zip file.
 
 ## Overview
 
@@ -18,5 +18,6 @@ The workflow:
 - Clones the specified version from the [aws/amazon-q-developer-cli](https://github.com/aws/amazon-q-developer-cli) repository
 - Builds the binary using `cargo build --bin chat_cli --release`
 - Renames the output from `chat_cli.exe` to `q.exe`
+- Creates a zip archive with the version in the filename (e.g., `amazon-q-developer-cli-v1.2.zip`)
 - Creates a new release with the specified tag name
-- Uploads the `q.exe` binary to the release
+- Uploads the zip file to the release
