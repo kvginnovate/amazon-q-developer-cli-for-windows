@@ -24,16 +24,17 @@ jobs:
         profile: minimal
         override: true
     
-    - name: Cache cargo registry
+    - name: Cache cargo and target
       uses: actions/cache@v3
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          q-cli-source/target
+        key: ${{ runner.os }}-rust-${{ inputs.version }}-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-cargo-
+          ${{ runner.os }}-rust-${{ inputs.version }}-
+          ${{ runner.os }}-rust-
     
     - name: Build binary
       run: |
