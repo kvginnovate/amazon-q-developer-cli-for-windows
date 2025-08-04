@@ -1,2 +1,20 @@
 # amazon-q-developer-cli-for-windows
+
+> **Disclaimer**: This is an unofficial repository and is not affiliated with or endorsed by Amazon Web Services (AWS). This project simply provides Windows builds of the official [Amazon Q Developer CLI](https://github.com/aws/amazon-q-developer-cli).
+
 Build Amazon Q Developer CLI for Windows.
+
+## Download
+
+Download the latest `q.exe` binary from the [Releases](https://github.com/DiscreteTom/amazon-q-developer-cli-for-windows/releases) page.
+
+## Overview
+
+This repository provides a GitHub workflow to automatically build the [Amazon Q Developer CLI](https://github.com/aws/amazon-q-developer-cli) for Windows and create releases with the compiled binary.
+
+The workflow:
+- Clones the specified version from the [aws/amazon-q-developer-cli](https://github.com/aws/amazon-q-developer-cli) repository
+- Builds the binary using `cargo build --bin chat_cli --release`
+- Renames the output from `chat_cli.exe` to `q.exe`
+- Creates a new release with the specified tag name
+- Uploads the `q.exe` binary to the release
