@@ -13,6 +13,9 @@ jobs:
     runs-on: windows-latest
     
     steps:
+    - name: Checkout current repository
+      uses: actions/checkout@v3
+    
     - name: Clone Amazon Q Developer CLI repository
       run: |
         git clone --branch ${{ inputs.version }} https://github.com/aws/amazon-q-developer-cli.git q-cli-source
@@ -50,6 +53,15 @@ jobs:
       run: |
         cd q-cli-source/target/release
         Compress-Archive -Path q.exe -DestinationPath amazon-q-developer-cli-${{ inputs.version }}.zip
+    
+    - name: Create tag
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git tag ${{ inputs.version }}
+        git push origin ${{ inputs.version }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Create Release
       uses: actions/create-release@v1
