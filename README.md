@@ -4,6 +4,8 @@
 
 > **Note**: There is no official Windows build of the Amazon Q Developer CLI. This unofficial build may be unstable or have bugs.
 
+> **Security Note**: The built binary is not code-signed, so Windows SmartScreen may display a warning when you first run it. This is normal for unsigned executables.
+
 Build Amazon Q Developer CLI for Windows.
 
 ## Download
