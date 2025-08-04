@@ -2,6 +2,8 @@
 
 > **Disclaimer**: This is an unofficial repository and is not affiliated with or endorsed by Amazon Web Services (AWS). This project simply provides Windows builds of the official [Amazon Q Developer CLI](https://github.com/aws/amazon-q-developer-cli).
 
+> **Note**: There is no official Windows build of the Amazon Q Developer CLI. This unofficial build may be unstable or have bugs.
+
 Build Amazon Q Developer CLI for Windows.
 
 ## Download
