@@ -20,6 +20,6 @@ The workflow:
 - Clones the specified version from the [aws/amazon-q-developer-cli](https://github.com/aws/amazon-q-developer-cli) repository
 - Builds the binary using `cargo build --bin chat_cli --release`
 - Renames the output from `chat_cli.exe` to `q.exe`
-- Creates a zip archive with the version in the filename (e.g., `amazon-q-developer-cli-v1.2.zip`)
+- Creates a zip archive with the version in the filename
 - Creates a new release with the specified tag name
 - Uploads the zip file to the release
