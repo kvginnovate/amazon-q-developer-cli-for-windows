@@ -47,6 +47,7 @@ jobs:
     - name: Rename binary
       run: |
         cd q-cli-source/target/release
+        if (Test-Path q.exe) { Remove-Item q.exe }
         mv chat_cli.exe q.exe
     
     - name: Create zip archive
