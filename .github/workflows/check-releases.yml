@@ -1,0 +1,46 @@
+name: Check for New Releases
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Get latest upstream release
+      id: upstream
+      run: |
+        LATEST=$(curl -s https://api.github.com/repos/aws/amazon-q-developer-cli/releases/latest | jq -r '.tag_name')
+        echo "latest=$LATEST" >> $GITHUB_OUTPUT
+    
+    - name: Check if release exists locally
+      id: local
+      run: |
+        if git ls-remote --tags origin | grep -q "refs/tags/${{ steps.upstream.outputs.latest }}"; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Trigger build workflow
+      if: steps.local.outputs.exists == 'false'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.actions.createWorkflowDispatch({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'build-windows.yml',
+            ref: 'main',
+            inputs: {
+              version: '${{ steps.upstream.outputs.latest }}'
+            }
+          })
