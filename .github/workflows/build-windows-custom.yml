@@ -1,0 +1,105 @@
+name: Custom Build Amazon Q Developer CLI for Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_url:
+        description: 'Repository URL to build from'
+        required: true
+        default: 'https://github.com/kvginnovate/amazon-q-developer-cli-for-windows'
+        type: string
+      version:
+        description: 'Version (branch or tag) to build'
+        required: true
+        default: 'main'
+        type: string
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+
+      - name: Clone Amazon Q Developer CLI repository
+        run: |
+          git clone --branch ${{ inputs.version }} https://github.com/aws/amazon-q-developer-cli.git q-cli-source
+        shell: bash
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          target: x86_64-pc-windows-msvc
+
+      - name: Cache cargo and target
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            q-cli-source/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('q-cli-source/**/Cargo.lock') }}
+
+      - name: Build binary
+        working-directory: ./q-cli-source
+        run: cargo build --bin chat_cli --release
+        shell: bash
+
+      - name: Rename binary
+        working-directory: ./q-cli-source/target/release
+        run: mv chat_cli.exe q.exe
+        shell: bash
+
+      - name: Create zip archive
+        working-directory: ./q-cli-source/target/release
+        run: |
+          $version = "${{ inputs.version }}"
+          $filename = "q-$version-windows-x64.zip"
+          Compress-Archive -Path q.exe -DestinationPath $filename
+          echo "ASSET_PATH=$filename" >> $env:GITHUB_ENV
+          echo "ASSET_NAME=$filename" >> $env:GITHUB_ENV
+        shell: powershell
+
+      - name: Create tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "${{ inputs.version }}-custom" -m "Custom build for version ${{ inputs.version }}"
+          git push origin "${{ inputs.version }}-custom" || echo "Tag already exists"
+        shell: bash
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.version }}-custom
+          release_name: Amazon Q Developer CLI v${{ inputs.version }} Custom Build
+          body: |
+            Custom build of Amazon Q Developer CLI for Windows
+            
+            Built from: ${{ inputs.repo_url }}
+            Version/Branch: ${{ inputs.version }}
+            
+            ## Installation
+            1. Download the zip file
+            2. Extract q.exe from the zip
+            3. Add q.exe to your PATH or run it directly
+            
+            **Note**: This is an unofficial build and may be unstable.
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./q-cli-source/target/release/${{ env.ASSET_NAME }}
+          asset_name: ${{ env.ASSET_NAME }}
+          asset_content_type: application/zip
