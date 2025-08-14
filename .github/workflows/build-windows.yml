@@ -1,5 +1,5 @@
+# GitHub Actions workflow for building Amazon Q CLI for Windows
 name: Build Amazon Q Developer CLI for Windows
-
 on:
   workflow_dispatch:
     inputs:
@@ -7,7 +7,6 @@ on:
         description: 'Version/branch/tag to build'
         required: true
         type: string
-
 jobs:
   build:
     runs-on: windows-latest
