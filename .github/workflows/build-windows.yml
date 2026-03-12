@@ -10,76 +10,89 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    
+
     steps:
-    - name: Checkout current repository
-      uses: actions/checkout@v3
-    
-    - name: Clone Amazon Q Developer CLI repository
-      run: |
-        git clone --branch ${{ inputs.version }} https://github.com/aws/amazon-q-developer-cli.git q-cli-source
-    
-    - name: Setup Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    
-    - name: Cache cargo and target
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          q-cli-source/target
-        key: ${{ runner.os }}-rust-${{ inputs.version }}-${{ github.run_id }}
-        restore-keys: |
-          ${{ runner.os }}-rust-${{ inputs.version }}-
-          ${{ runner.os }}-rust-
-    
-    - name: Build binary
-      run: |
-        cd q-cli-source
-        cargo build --bin chat_cli --release
-    
-    - name: Rename binary
-      run: |
-        cd q-cli-source/target/release
-        if (Test-Path q.exe) { Remove-Item q.exe }
-        mv chat_cli.exe q.exe
-    
-    - name: Create zip archive
-      run: |
-        cd q-cli-source/target/release
-        Compress-Archive -Path q.exe -DestinationPath amazon-q-developer-cli-${{ inputs.version }}.zip
-    
-    - name: Create tag
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git tag ${{ inputs.version }}
-        git push origin ${{ inputs.version }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Create Release
-      uses: actions/create-release@v1
-      id: create_release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ inputs.version }}
-        release_name: ${{ inputs.version }}
-        draft: false
-        prerelease: false
-    
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: q-cli-source/target/release/amazon-q-developer-cli-${{ inputs.version }}.zip
-        asset_name: amazon-q-developer-cli-${{ inputs.version }}.zip
-        asset_content_type: application/zip
+      - name: Checkout current repository
+        uses: actions/checkout@v3
+
+      - name: Clone Amazon Q Developer CLI repository
+        run: |
+          git clone --branch ${{ inputs.version }} https://github.com/aws/amazon-q-developer-cli.git q-cli-source
+
+      - name: Patch source for Windows compatibility
+        shell: pwsh
+        run: |
+          $file = 'q-cli-source/crates/agent/src/agent/util/mod.rs'
+          if (Test-Path $file) {
+            $lines = Get-Content $file
+            $patched = $lines | Where-Object { $_ -notmatch 'use std::os::unix::fs::MetadataExt' } | ForEach-Object { $_ -replace 'md\.size\(\)', 'md.len()' }
+            Set-Content $file $patched
+            Write-Host 'Patched mod.rs for Windows compatibility'
+          } else {
+            Write-Host 'mod.rs not found, skipping patch'
+          }
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache cargo and target
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            q-cli-source/target
+          key: ${{ runner.os }}-rust-${{ inputs.version }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-rust-${{ inputs.version }}-
+            ${{ runner.os }}-rust-
+
+      - name: Build binary
+        run: |
+          cd q-cli-source
+          cargo build --bin chat_cli --release
+
+      - name: Rename binary
+        run: |
+          cd q-cli-source/target/release
+          if (Test-Path q.exe) { Remove-Item q.exe }
+          mv chat_cli.exe q.exe
+
+      - name: Create zip archive
+        run: |
+          cd q-cli-source/target/release
+          Compress-Archive -Path q.exe -DestinationPath amazon-q-developer-cli-${{ inputs.version }}.zip
+
+      - name: Create tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ inputs.version }}
+          git push origin ${{ inputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.version }}
+          release_name: ${{ inputs.version }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: q-cli-source/target/release/amazon-q-developer-cli-${{ inputs.version }}.zip
+          asset_name: amazon-q-developer-cli-${{ inputs.version }}.zip
+          asset_content_type: application/zip
